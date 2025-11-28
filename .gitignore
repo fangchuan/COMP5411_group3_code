@@ -1,0 +1,28 @@
+# __pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.egg-info/
+
+
+# Pyre type checker
+.pyre/
+
+# vscode
+.vscode/
+
+# logging folder
+log/
+
+# checkpoint files
+pretrained_ckpts/
+checkpoints/
+
+# temp files
+*.tmp
+tmp/

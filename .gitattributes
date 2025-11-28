@@ -1,0 +1,3 @@
+assets/example_spatialgen_image/20240506_3FO4K5FY7KYD_room_513.npz filter=lfs diff=lfs merge=lfs -text
+assets/example_spatialgen_image/20240617_3FO4K5FSPU81_room_655.npz filter=lfs diff=lfs merge=lfs -text
+assets/example_spatialgen_image/20240617_3FO4K5FSQBX6_room_1115.npz filter=lfs diff=lfs merge=lfs -text

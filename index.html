@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Gaussian Splatting Viewer</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading 3D Viewer...</div>
+    </div>
+
+    <div id="renderPage">
+        <!-- UI Elements -->
+ 
+        <div id="controlsInfo">
+            <h3>Drag Mode</h3>
+            <p>Drag to look around</p>
+            <p>Use "Reset View" to return to start</p>
+        </div>
+
+        <div id="controlPanel" class="control-panel">
+        </div>
+
+        <button id="showPanelBtn" onclick="UIManager.getInstance().togglePanel()">Show Controls</button>
+        <canvas id="threeCanvas"></canvas>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/",
+                "@sparkjsdev/spark": "./node_modules/@sparkjsdev/spark/spark.module.js"
+            }
+        }
+
+    </script>
+    <script type="module"> window.plyBase64 = "{{PLY_DATA}}";</script>
+
+    <script type="module" src="js/main.js"></script>
+        
+</body>
+</html>
