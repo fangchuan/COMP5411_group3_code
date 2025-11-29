@@ -282,7 +282,7 @@ export class ViewerCore {
             }
             
             // Optional: Log to console
-            console.log(`FPS: ${this.fps}`);
+            // console.log(`FPS: ${this.fps}`);
         }
     }
 
