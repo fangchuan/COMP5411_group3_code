@@ -93,7 +93,6 @@ export class EffectsSystem {
         this.setIntensity(0.8);
     }
 
-    // Effect modifier creation
     createEffectModifier() {
         return dyno.dynoBlock(
             { gsplat: dyno.Gsplat },
@@ -114,19 +113,19 @@ export class EffectsSystem {
                             vec3 hash(vec3 p) {
                                 return fract(sin(p*123.456)*123.456);
                             }
-
+    
                             mat2 rot(float a) {
                                 float s = sin(a), c = cos(a);
                                 return mat2(c, -s, s, c);
                             }
-
+    
                             // Head movement effect
                             vec3 headMovement(vec3 pos, float t) {
                                 vec3 result = pos;
                                 result.xy *= rot(smoothstep(-1., -2., pos.y) * .2 * sin(t*2.));
                                 return result;
                             }
-
+    
                             // Breathing animation effect
                             vec3 breathAnimation(vec3 pos, float t) {
                                 vec3 result = pos;
@@ -139,7 +138,7 @@ export class EffectsSystem {
                                 result.y -= 1.2;
                                 return result;
                             }
-
+    
                             // Electronic fractal effect
                             vec4 fractal1(vec3 pos, float t, float intensity) {
                                 float m = 100.;
@@ -153,7 +152,7 @@ export class EffectsSystem {
                                 m = step(m, 0.5) * 1.3 * intensity;
                                 return vec4(-pos.y * .3, 0.5, 0.7, .3) * intensity + m;
                             }
-
+    
                             // Deep meditation fractal effect
                             vec4 fractal2(vec3 center, vec3 scales, vec4 rgba, float t, float intensity) {
                                 vec3 pos = center;
@@ -177,13 +176,13 @@ export class EffectsSystem {
                                 return vec4(vec3(length(rgba.rgb)) * vec3(c, c*c, c*c*c) * intensity, 
                                           rgba.a * exp(-20. * splatSize) * m * intensity);
                             }
-
+    
                             // Wave effect
                             vec4 sin3D(vec3 p, float t) {
                                 float m = exp(-2. * length(sin(p * 5. + t * 3.))) * 5.;
                                 return vec4(m) + .3;
                             }
-
+    
                             // Disintegration effect
                             vec4 disintegrate(vec3 pos, float t, float intensity) {
                                 vec3 p = pos + (hash(pos) * 2. - 1.) * intensity;
@@ -202,184 +201,180 @@ export class EffectsSystem {
                                 p.y += sin(t) * tt;
                                 return vec4(mix(pos, p, tt), tt);
                             }
-
-                            // Disco effect - hundreds of light splats
-                            vec3 hundredsOfLightSplats(vec3 worldPos, vec3 meshCenter, float t) {
-                                // Dark room environment
-                                vec3 roomColor = vec3(0.02, 0.02, 0.03);
+    
+                            // DISCO WITH BALANCED DARKNESS & GOOD VISIBILITY
+                            vec4 discoBalanced(vec3 pos, vec4 rgba, vec3 scales, float t, float intensity, vec3 meshCenter) {
+                                vec3 worldPos = pos + meshCenter;
                                 
-                                // Disco ball position
-                                vec3 discoBallPos = meshCenter;
+                                float gridDensity = 8.0;
+                                vec3 cell = floor(worldPos * gridDensity);
                                 
-                                // Calculate distance from disco ball
-                                vec3 toPoint = worldPos - discoBallPos;
-                                float distToBall = length(toPoint);
+                                // Orbit parameters
+                                float orbitRadius = 0.15;
+                                float orbitSpeed1 = 1.5;
+                                float orbitSpeed2 = 2.2;
                                 
-                                if (distToBall < 0.001) {
-                                    distToBall = 0.001;
-                                }
+                                // Calculate circular orbits
+                                vec2 orbit1 = vec2(
+                                    sin(t * orbitSpeed1 + cell.x * 2.0) * orbitRadius,
+                                    cos(t * orbitSpeed1 + cell.z * 1.5) * orbitRadius
+                                );
                                 
-                                vec3 mainLightColor;
-                                float colorCycle = mod(t * 0.4, 3.0);
-                                if (colorCycle < 1.0) {
-                                    mainLightColor = vec3(1.0, 0.2, 0.2);
-                                } else if (colorCycle < 2.0) {
-                                    mainLightColor = vec3(0.2, 0.2, 1.0);
-                                } else {
-                                    mainLightColor = vec3(0.2, 1.0, 0.2);
-                                }
+                                vec2 orbit2 = vec2(
+                                    cos(t * orbitSpeed2 + cell.y * 1.8) * orbitRadius * 0.7,
+                                    sin(t * orbitSpeed2 + cell.x * 2.3) * orbitRadius * 0.7
+                                );
                                 
-                                vec3 totalLight = vec3(0.0);
-                                float totalSplatIntensity = 0.0;
+                                // Moving spot centers
+                                vec3 baseCellCenter = (cell + 0.5) / gridDensity;
+                                vec3 movingCenter1 = baseCellCenter;
+                                movingCenter1.xz += orbit1;
                                 
-                                // First layer of orbiting lights
-                                for (int i = 0; i < 16; i++) {
-                                    for (int j = 0; j < 4; j++) {
-                                        int splatIndex = i * 4 + j;
-                                        
-                                        float baseAngle = float(i) * 0.3927;
-                                        float layerRadius = 0.5 + float(j) * 0.8;
-                                        float rotationSpeed = 0.8;
-                                        float currentAngle = baseAngle + t * rotationSpeed;
-                                        
-                                        vec3 splatOrbitPos = vec3(
-                                            cos(currentAngle) * layerRadius,
-                                            sin(currentAngle) * 0.3,
-                                            sin(currentAngle) * layerRadius
-                                        );
-                                        
-                                        vec3 splatWorldPos = discoBallPos + splatOrbitPos;
-                                        vec3 splatToPoint = worldPos - splatWorldPos;
-                                        float splatDistance = length(splatToPoint);
-                                        
-                                        if (splatDistance < 0.001) {
-                                            splatDistance = 0.001;
-                                        }
-                                        
-                                        float splatSize = 0.15 + hash(vec3(float(splatIndex))).x * 0.1;
-                                        float splatIntensity = 1.0 - smoothstep(0.0, splatSize, splatDistance);
-                                        splatIntensity *= 2.5;
-                                        
-                                        vec3 splatColor = mainLightColor;
-                                        splatColor += hash(vec3(float(splatIndex), 1.0, 0.0)) * 0.4 - 0.2;
-                                        splatColor = max(splatColor, vec3(0.3));
-                                        
-                                        float pulse = 0.7 + 0.3 * sin(t * 3.0 + float(splatIndex) * 0.5);
-                                        splatIntensity *= pulse;
-                                        
-                                        totalLight += splatColor * splatIntensity;
-                                        totalSplatIntensity += splatIntensity;
-                                    }
-                                }
+                                vec3 movingCenter2 = baseCellCenter;
+                                movingCenter2.xz += orbit2;
                                 
-                                // Second layer of orbiting lights
-                                for (int k = 0; k < 12; k++) {
-                                    for (int l = 0; l < 4; l++) {
-                                        int splatIndex = 64 + k * 4 + l;
-                                        
-                                        float baseAngle = float(k) * 0.5236;
-                                        float layerRadius = 2.0 + float(l) * 1.2;
-                                        float rotationSpeed = 0.6;
-                                        float currentAngle = baseAngle + t * rotationSpeed * 1.3;
-                                        
-                                        vec3 splatOrbitPos = vec3(
-                                            cos(currentAngle) * layerRadius,
-                                            (hash(vec3(float(k), float(l), 0.0)).x - 0.5) * 3.0,
-                                            sin(currentAngle) * layerRadius
-                                        );
-                                        
-                                        vec3 splatWorldPos = discoBallPos + splatOrbitPos;
-                                        vec3 splatToPoint = worldPos - splatWorldPos;
-                                        float splatDistance = length(splatToPoint);
-                                        
-                                        if (splatDistance < 0.001) {
-                                            splatDistance = 0.001;
-                                        }
-                                        
-                                        float splatSize = 0.12 + hash(vec3(float(splatIndex))).x * 0.08;
-                                        float splatIntensity = 1.0 - smoothstep(0.0, splatSize, splatDistance);
-                                        splatIntensity *= 3.0;
-                                        
-                                        vec3 splatColor = mainLightColor;
-                                        if (l == 0) splatColor *= vec3(1.0, 0.8, 0.8);
-                                        else if (l == 1) splatColor *= vec3(0.8, 0.8, 1.0);
-                                        else if (l == 2) splatColor *= vec3(0.8, 1.0, 0.8);
-                                        
-                                        float pulse = 0.6 + 0.4 * sin(t * 4.0 + float(splatIndex) * 0.7);
-                                        splatIntensity *= pulse;
-                                        
-                                        totalLight += splatColor * splatIntensity;
-                                        totalSplatIntensity += splatIntensity;
-                                    }
-                                }
+                                // Calculate distances to orbiting spots
+                                float dist1 = length(worldPos - movingCenter1);
+                                float dist2 = length(worldPos - movingCenter2);
+                                float spotRadius = 0.04;
                                 
-                                // Random floating lights
-                                for (int m = 0; m < 32; m++) {
-                                    int splatIndex = 112 + m;
+                                // Circular spots with smooth edges
+                                float spot1 = 1.0 - smoothstep(0.0, spotRadius, dist1);
+                                float spot2 = 1.0 - smoothstep(0.0, spotRadius, dist2);
+                                
+                                // Colors for each orbit
+                                vec3 color1, color2;
+                                float colorIndex1 = mod(cell.x * 1.2 + cell.z * 2.4 + t * 0.4, 6.0);
+                                float colorIndex2 = mod(cell.y * 2.1 + cell.x * 1.7 + t * 0.6, 6.0);
+                                
+                                if (colorIndex1 < 1.0) color1 = vec3(1.0, 0.0, 0.0);
+                                else if (colorIndex1 < 2.0) color1 = vec3(0.0, 1.0, 0.0);
+                                else if (colorIndex1 < 3.0) color1 = vec3(0.0, 0.0, 1.0);
+                                else if (colorIndex1 < 4.0) color1 = vec3(1.0, 1.0, 0.0);
+                                else if (colorIndex1 < 5.0) color1 = vec3(1.0, 0.0, 1.0);
+                                else color1 = vec3(0.0, 1.0, 1.0);
+                                
+                                if (colorIndex2 < 1.0) color2 = vec3(1.0, 0.5, 0.0);
+                                else if (colorIndex2 < 2.0) color2 = vec3(0.5, 1.0, 0.0);
+                                else if (colorIndex2 < 3.0) color2 = vec3(0.0, 0.5, 1.0);
+                                else if (colorIndex2 < 4.0) color2 = vec3(1.0, 1.0, 0.5);
+                                else if (colorIndex2 < 5.0) color2 = vec3(1.0, 0.5, 1.0);
+                                else color2 = vec3(0.5, 1.0, 1.0);
+                                
+                                // Pulsing animation
+                                float pulse1 = 0.6 + 0.4 * sin(t * 3.0 + cell.x);
+                                float pulse2 = 0.6 + 0.4 * sin(t * 3.5 + cell.z);
+                                
+                                spot1 *= pulse1 * intensity * 2.0;
+                                spot2 *= pulse2 * intensity * 2.0;
+                                
+                                // BALANCED DARK BACKGROUND - not too dark, good visibility
+                                vec3 darkBackground = rgba.rgb * 0.4; // 60% darker (was 0.05 - 95% darker)
+                                
+                                // ILLUMINATION EFFECT - spots light up the surrounding area
+                                float glowRadius1 = spotRadius * 3.0;
+                                float glowRadius2 = spotRadius * 3.0;
+                                
+                                // Glow around spots
+                                float glow1 = 1.0 - smoothstep(0.0, glowRadius1, dist1);
+                                float glow2 = 1.0 - smoothstep(0.0, glowRadius2, dist2);
+                                
+                                glow1 *= 0.5 * pulse1 * intensity; // Stronger glow
+                                glow2 *= 0.5 * pulse2 * intensity;
+                                
+                                // Combine everything:
+                                // 1. Start with balanced dark background
+                                vec3 finalColor = darkBackground;
+                                
+                                // 2. Add glow illumination
+                                finalColor += color1 * glow1;
+                                finalColor += color2 * glow2;
+                                
+                                // 3. Add bright spots on top
+                                finalColor = mix(finalColor, color1, spot1);
+                                finalColor = mix(finalColor, color2, spot2);
+                                
+                                // Calculate final alpha
+                                float illumination = max(glow1, glow2);
+                                float spots = max(spot1, spot2);
+                                float finalAlpha = max(rgba.a, max(illumination, spots));
+                                
+                                return vec4(finalColor, finalAlpha);
+                            }
+    
+                            // DISCO BRIGHTER VERSION - Even better visibility
+                            vec4 discoBrightVisible(vec3 pos, vec4 rgba, vec3 scales, float t, float intensity, vec3 meshCenter) {
+                                vec3 worldPos = pos + meshCenter;
+                                
+                                float gridDensity = 10.0;
+                                vec3 cell = floor(worldPos * gridDensity);
+                                
+                                // Create multiple orbiting spots
+                                vec3 baseCellCenter = (cell + 0.5) / gridDensity;
+                                
+                                // Three orbiting spots per cell
+                                vec3 movingCenters[3];
+                                vec3 colors[3];
+                                float spots[3];
+                                float glows[3];
+                                
+                                for (int i = 0; i < 3; i++) {
+                                    float orbitSpeed = 1.0 + float(i) * 0.8;
+                                    float radius = 0.12 + float(i) * 0.04;
                                     
-                                    vec3 randomOffset = hash(vec3(float(m), 2.0, 0.0)) * 8.0 - 4.0;
-                                    randomOffset.y = abs(randomOffset.y) * 0.5;
-                                    
-                                    vec3 drift = vec3(
-                                        sin(t * 0.5 + float(m) * 0.3) * 0.5,
-                                        cos(t * 0.7 + float(m) * 0.5) * 0.3,
-                                        sin(t * 0.6 + float(m) * 0.4) * 0.5
+                                    vec2 orbit = vec2(
+                                        sin(t * orbitSpeed + cell.x * (1.0 + float(i)) + float(i) * 2.0) * radius,
+                                        cos(t * orbitSpeed + cell.z * (1.0 + float(i)) + float(i) * 3.0) * radius
                                     );
                                     
-                                    vec3 splatWorldPos = discoBallPos + randomOffset + drift;
-                                    vec3 splatToPoint = worldPos - splatWorldPos;
-                                    float splatDistance = length(splatToPoint);
+                                    movingCenters[i] = baseCellCenter;
+                                    movingCenters[i].xz += orbit;
                                     
-                                    if (splatDistance < 0.001) {
-                                        splatDistance = 0.001;
-                                    }
+                                    float dist = length(worldPos - movingCenters[i]);
+                                    float spotRadius = 0.03;
+                                    float glowRadius = spotRadius * 4.0;
                                     
-                                    float splatSize = 0.1 + hash(vec3(float(m))).x * 0.05;
-                                    float splatIntensity = 1.0 - smoothstep(0.0, splatSize, splatDistance);
-                                    splatIntensity *= 4.0;
+                                    spots[i] = 1.0 - smoothstep(0.0, spotRadius, dist);
+                                    glows[i] = (1.0 - smoothstep(0.0, glowRadius, dist)) * 0.6; // Brighter glow
                                     
-                                    vec3 splatColor = mainLightColor;
-                                    splatColor = mix(splatColor, hash(vec3(float(m), 3.0, 0.0)), 0.3);
-                                    splatColor = max(splatColor, vec3(0.4));
+                                    // Color cycling
+                                    float colorIndex = mod(cell.x * (1.0 + float(i)) + cell.z * (2.0 + float(i)) + t * (0.2 + float(i) * 0.1), 6.0);
                                     
-                                    float blink = step(0.3, hash(vec3(t * 2.0 + float(m))).x);
-                                    splatIntensity *= blink;
+                                    if (colorIndex < 1.0) colors[i] = vec3(1.0, 0.0, 0.0);
+                                    else if (colorIndex < 2.0) colors[i] = vec3(0.0, 1.0, 0.0);
+                                    else if (colorIndex < 3.0) colors[i] = vec3(0.0, 0.0, 1.0);
+                                    else if (colorIndex < 4.0) colors[i] = vec3(1.0, 1.0, 0.0);
+                                    else if (colorIndex < 5.0) colors[i] = vec3(1.0, 0.0, 1.0);
+                                    else colors[i] = vec3(0.0, 1.0, 1.0);
                                     
-                                    totalLight += splatColor * splatIntensity;
-                                    totalSplatIntensity += splatIntensity;
+                                    // Pulsing
+                                    float pulse = 0.7 + 0.3 * sin(t * (2.0 + float(i)) + cell.x + cell.z);
+                                    spots[i] *= pulse * intensity * 2.5; // Brighter spots
+                                    glows[i] *= pulse * intensity;
                                 }
                                 
-                                vec3 finalColor = roomColor;
+                                // BALANCED BACKGROUND - good visibility
+                                vec3 background = rgba.rgb * 0.6; // Only 40% darker - much brighter
                                 
-                                if (totalSplatIntensity > 0.0) {
-                                    vec3 averageSplatColor = totalLight / totalSplatIntensity;
-                                    finalColor += averageSplatColor * totalSplatIntensity * 0.3;
+                                vec3 finalColor = background;
+                                float maxGlow = 0.0;
+                                float maxSpot = 0.0;
+                                
+                                // Add all glows and spots
+                                for (int i = 0; i < 3; i++) {
+                                    // Add glow illumination first
+                                    finalColor += colors[i] * glows[i];
+                                    // Add bright spots on top
+                                    finalColor = mix(finalColor, colors[i], spots[i]);
                                     
-                                    float overallBrightness = totalSplatIntensity * 0.1;
-                                    if (overallBrightness > 0.5) {
-                                        finalColor += averageSplatColor * (overallBrightness - 0.5) * 2.0;
-                                    }
+                                    maxGlow = max(maxGlow, glows[i]);
+                                    maxSpot = max(maxSpot, spots[i]);
                                 }
                                 
-                                float distanceFalloff = 1.0 / (1.0 + distToBall * 0.3);
-                                finalColor *= distanceFalloff;
+                                // Final alpha - ensure illuminated areas are visible
+                                float finalAlpha = max(rgba.a, max(maxGlow, maxSpot));
                                 
-                                return finalColor;
-                            }
-                            
-                            // Main disco effect function
-                            vec4 hundredsOfSplatsEffect(vec3 worldPos, vec4 originalColor, float t, float intensity, vec3 meshCenter) {
-                                vec3 lightSplats = hundredsOfLightSplats(worldPos, meshCenter, t);
-                                vec3 finalColor = originalColor.rgb * 0.05;
-                                finalColor += lightSplats * intensity * 6.0;
-                                
-                                float splatLuminance = length(lightSplats);
-                                if (splatLuminance > 0.1) {
-                                    finalColor = mix(finalColor, finalColor * 2.0, splatLuminance);
-                                }
-                                
-                                float splatAlpha = min(1.0, originalColor.a + splatLuminance * 1.2);
-                                return vec4(finalColor, splatAlpha);
+                                return vec4(finalColor, finalAlpha);
                             }
                         `)
                     ],
@@ -436,13 +431,15 @@ export class EffectsSystem {
                             ${outputs.gsplat}.rgba.a = mix(splatColor.a, 0.3, abs(e.w));
                         }
                         else if (${inputs.effectType} == 6) {
-                            // Disco effect
-                            vec4 splats = hundredsOfSplatsEffect(localPos, splatColor, ${inputs.t}, ${inputs.intensity}, ${inputs.meshCenter});
-                            ${outputs.gsplat}.rgba = splats;
+                            // DISCO EFFECT - Balanced darkness with good visibility
+                            // Try the brighter version first:
+                            vec4 disco = discoBrightVisible(localPos, splatColor, splatScales, ${inputs.t}, ${inputs.intensity}, ${inputs.meshCenter});
+                            
+                            ${outputs.gsplat}.rgba = disco;
                         }
                     `),
                 });
-
+    
                 const effectTypeMap = {
                     "None": 0,
                     "Electronic": 1,
@@ -452,17 +449,16 @@ export class EffectsSystem {
                     "Disintegrate": 5,
                     "Disco": 6
                 };
-
+    
                 const effectType = effectTypeMap[this.effectParams.effect] || 0;
                 
                 if (effectType !== 0) {
-                    // Get mesh center for effects that need it
                     let meshCenter = new THREE.Vector3(0, 0, 0);
                     if (this.mesh) {
                         const boundingBox = this.mesh.getBoundingBox();
                         boundingBox.getCenter(meshCenter);
                     }
-                    console.log("2222222", this.effectParams.intensity)
+                    
                     gsplat = d.apply({ 
                         gsplat, 
                         t: this.animateT,
@@ -475,8 +471,8 @@ export class EffectsSystem {
                 return { gsplat };
             }
         );
-    }
-
+    } 
+   
     // Get current effect state
     getState() {
         return {
